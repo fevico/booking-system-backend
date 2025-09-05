@@ -14,7 +14,7 @@ const PORT = 8000;
 
 app.use(express.json());
 app.use(cors({
-  origin: 'http://localhost:3002', // Allow Next.js frontend
+  origin: process.env.FRONTEND_URL || 'http://localhost:3002', // Allow Next.js frontend
   methods: ['GET', 'POST'],
   credentials: true,
 }))
