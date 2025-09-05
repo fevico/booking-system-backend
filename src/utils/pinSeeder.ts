@@ -1,6 +1,6 @@
 import Pin from '../models/Pin';
 
-export const seedPins = async (count: number = 100) => {
+export const seedPins = async (count: number = 200) => {
   const pins = new Set<string>();
   while (pins.size < count) {
     const pin = Math.floor(1000 + Math.random() * 9000).toString();

@@ -6,6 +6,6 @@ export interface IPin extends Document {
 
 const PinSchema: Schema = new Schema({
   code: { type: String, required: true, unique: true },
-});
+}, { timestamps: true });
 
 export default mongoose.model<IPin>('Pin', PinSchema);
