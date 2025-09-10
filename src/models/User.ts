@@ -1,7 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-
-export type GuestCategory = 'student' | 'academia' | 'press' | 'creative/influencer' | 'others';
+export type GuestCategory = 'Student' | 'Academia' | 'Press' | 'Others';
 
 export interface IUser extends Document {
   name: string;
@@ -10,10 +9,9 @@ export interface IUser extends Document {
   pin: string;
   qrCode: string;
   organization?: string;
-  category: GuestCategory;
-  scans: Date[];
+  guestCategory: GuestCategory;
+  lastScan?: Date | null; // Changed from scans array to single lastScan
 }
-
 
 const UserSchema: Schema = new Schema({
   name: { type: String, required: true },
@@ -22,12 +20,12 @@ const UserSchema: Schema = new Schema({
   pin: { type: String, required: true },
   qrCode: { type: String, required: true },
   organization: { type: String },
-  scans: [{ type: Date }],
-  category: {
+  guestCategory: {
     type: String,
     required: true,
-    enum: ['student', 'academia', 'press', 'creative/influencer', 'others'],
+    enum: ['Student', 'Academia', 'Press', 'Others'],
   },
+  lastScan: { type: Date, default: null }, // Single timestamp or null
 });
 
 export default mongoose.model<IUser>('User', UserSchema);
