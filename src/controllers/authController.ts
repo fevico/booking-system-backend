@@ -5,6 +5,9 @@ import { sendEmail } from '@/utils/email';
 import User from '@/models/User';
 import Pin from '@/models/Pin';
 import dotenv from 'dotenv';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import Admin from '@/models/admin';
 
 dotenv.config();
 
@@ -22,6 +25,34 @@ interface RegisterRequest extends Request {
 interface VerifyRequest extends Request {
   body: { qrData: string };
 }
+
+interface LoginRequest extends Request {
+  body: { username: string; password: string };
+}
+
+interface GeneratePinsRequest extends Request {
+  body: { count: number };
+}
+
+export const login = async (req: LoginRequest, res: Response) => {
+  const { username, password } = req.body;
+  try {
+    const admin = await Admin.findOne({ username });
+    if (!admin) {
+      return res.status(401).json({ message: 'Invalid username or password' });
+    }
+
+    const isMatch = await bcrypt.compare(password, admin.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid username or password' });
+    }
+
+    const token = jwt.sign({ id: admin._id, role: admin.role }, process.env.JWT_SECRET!, { expiresIn: '1h' });
+    res.json({ token, role: admin.role });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
 
 export const register = async (req: RegisterRequest, res: Response) => {
   const { name, phone, email, pin, organization, category } = req.body;
@@ -120,5 +151,31 @@ export const exportPins = async (req: Request, res: Response) => {
     res.send(csv);
   } catch (err: any) {
     res.status(500).json({ message: err.message });
+  }
+};
+
+export const generatePins = async (req: GeneratePinsRequest, res: Response) => {
+  const { count } = req.body;
+  if (!count || count < 1 || count > 1000) {
+    return res.status(400).json({ message: 'Count must be between 1 and 1000' });
+  }
+
+  try {
+    const pins: { code: string }[] = [];
+    const pinLength = 4; // Adjust as needed
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+    while (pins.length < count) {
+      const code = Array.from({ length: pinLength }, () => characters.charAt(Math.floor(Math.random() * characters.length))).join('');
+      const existingPin = await Pin.findOne({ code });
+      if (!existingPin) {
+        pins.push({ code });
+      }
+    }
+
+    await Pin.insertMany(pins);
+    res.status(201).json({ message: `${count} PINs generated successfully`, pins });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Error generating PINs', error: err.message });
   }
 };
